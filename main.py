@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import io
 import requests
+import random
+import string
 
 def fetch_csv_from_url(url):
     if 'docs.google.com' in url:
@@ -16,12 +18,11 @@ def fetch_csv_from_url(url):
         st.error("Invalid Google Sheets URL.")
         return None
 
-def get_first_non_empty(row, column_prefix, max_columns=5):
-    for i in range(1, max_columns + 1):
-        column_name = f"{column_prefix}{i}"
-        if column_name in row.index and pd.notna(row[column_name]):
-            return row[column_name]
-    return ""
+def generate_random_email():
+    """Generate a random fake email address."""
+    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    domain = random.choice(["example.com", "testmail.com", "fakeemail.org"])
+    return f"{username}@{domain}"
 
 def process_leads_data(df):
     # Normalize column names to lowercase and strip any whitespace
@@ -59,18 +60,22 @@ def process_leads_data(df):
         selected_phones = row['selected_phones']
         unique_emails = row['unique_emails']
 
+        # Ensure at least one output row per original row
+        max_count = max(len(selected_phones), len(unique_emails), 1)
+
         for i in range(len(selected_phones)):
             output_rows.append({
                 'First Name': row.get('owner 1 first name', ""),
                 'Last Name': row.get('owner 1 last name', ""),
-                'Email': unique_emails[i] if i < len(unique_emails) else "",
+                'Email': unique_emails[i] if i < len(unique_emails) else generate_random_email(),
                 'Mobile Phone': selected_phones[i],
                 'Address': row.get('address', ""),
                 'City': row.get('city', ""),
                 'State': row.get('state', ""),
                 'Zip Code': row.get('zip', "")
             })
-
+        
+        
     # If no rows were added, return an empty DataFrame
     if not output_rows:
         return pd.DataFrame(columns=['First Name', 'Last Name', 'Email', 'Mobile Phone', 'Address', 'City', 'State', 'Zip Code'])
